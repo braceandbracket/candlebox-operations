@@ -5,8 +5,9 @@ This is a React + Vite app deployed as a monday.com Board View feature.
 It is hosted on monday's CDN via mapps CLI. Do not suggest Next.js, SSR, or server routes.
 
 ## Stack
-- React 18, Vite 6, JSX
+- React 18, Vite 6, TSX
 - monday-sdk-js for all board data access
+- Manual monday SDK type declarations live in `src/types/monday.d.ts`
 - @mondaycom/apps-sdk for server/storage utilities
 - @vibe/core for UI components (monday's design system)
 - Deployed via: `mapps code:push --client-side -d "build" -i 14083495`
@@ -34,7 +35,7 @@ monday MCP is connected. Use it to inspect live board structure,
 column IDs, and item data before writing GraphQL queries.
 
 ## Rules
-- All UI work goes in src/App.jsx and child components under src/
-- Do not modify src/index.jsx or vite.config.js without reason
+- All UI work goes in src/App.tsx and child components under src/
+- Do not modify src/index.tsx or vite.config.ts without reason
 - Do not add node_modules to any deployment command
 - Keep components small and co-located with their CSS

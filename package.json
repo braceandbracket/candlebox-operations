@@ -36,6 +36,9 @@
   },
   "devDependencies": {
     "@mondaycom/apps-cli": "^4.9.2",
+    "@types/node": "^25.6.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^4.3.2",
     "concurrently": "^5.2.0",
     "cross-port-killer": "^1.2.1",
@@ -43,6 +46,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "sass": "^1.54.8",
+    "typescript": "^6.0.3",
     "vite": "^6.2.2"
   },
   "type": "module"
