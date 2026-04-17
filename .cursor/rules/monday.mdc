@@ -1,0 +1,14 @@
+---
+description: Candlebox Operations project conventions
+alwaysApply: true
+---
+
+Project rules and conventions are defined in CLAUDE.md at the project root.
+Read that file for full context before making any changes.
+
+## Quick reference
+- Stack: React + Vite, monday-sdk-js, @vibe/core
+- Deploy: `npm run deploy:build && mapps code:push --client-side -d "build" -i 14083495`
+- Never use fetch() against monday APIs — always use monday.api()
+- Use MCP to inspect live board column IDs before writing GraphQL
+- All UI work in src/App.jsx and child components under src/

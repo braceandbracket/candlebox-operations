@@ -1,0 +1,4 @@
+.env
+.mappsrc
+node_modules
+build
