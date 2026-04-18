@@ -1,12 +1,270 @@
+/* ── Base ───────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
 body {
   margin: 0;
-  font-family: "Roboto", sans-serif;
+  font-family: var(--font-family);
+  background: var(--grey-background-color);
+  color: var(--primary-text-color);
 }
 
+/* ── App shell ──────────────────────────────────────────── */
 .App {
-  height: 100vh;
-  width: 100vw;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Header ─────────────────────────────────────────────── */
+.app-header {
+  background: var(--primary-background-color);
+  border-bottom: var(--border-width) var(--border-style) var(--layout-border-color);
+  padding: var(--spacing-large) var(--spacing-large);
   display: flex;
   align-items: center;
+  gap: var(--spacing-small);
+}
+
+.app-header-icon {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.app-header-text h1 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--primary-text-color);
+}
+
+.app-header-text p {
+  margin: 1px 0 0;
+  font-size: 12px;
+  color: var(--secondary-text-color);
+}
+
+/* ── Tab bar ────────────────────────────────────────────── */
+.tab-bar {
+  background: var(--primary-background-color);
+  border-bottom: var(--border-width) var(--border-style) var(--layout-border-color);
+  padding: 0 var(--spacing-large);
+}
+
+/* ── Page body ──────────────────────────────────────────── */
+.page-body {
+  flex: 1;
+  padding: var(--spacing-medium) var(--spacing-large);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-medium);
+}
+
+/* ── Cards / panels ─────────────────────────────────────── */
+.panel {
+  background: var(--primary-background-color);
+  border: var(--border-width) var(--border-style) var(--layout-border-color);
+  border-radius: var(--border-radius-medium);
+  padding: var(--spacing-large);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-medium);
+}
+
+.panel-title {
+  margin: 0 0 4px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--primary-text-color);
+}
+
+.panel-subtitle {
+  margin: 0;
+  font-size: 13px;
+  color: var(--secondary-text-color);
+}
+
+/* ── Section divider ────────────────────────────────────── */
+.section-divider {
+  border: none;
+  border-top: var(--border-width) var(--border-style) var(--layout-border-color);
+  margin: 4px 0;
+}
+
+/* ── Fragrance picker grid ──────────────────────────────── */
+.fragrance-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-medium);
+}
+
+.fragrance-slot-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--secondary-text-color);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
+}
+
+.fragrance-slot-badge {
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--primary-color);
+  color: var(--text-color-on-primary);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+/* ── Order detail fields ─────────────────────────────────── */
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--spacing-medium);
+  align-items: start;
+}
+
+.field-row .qty-field {
+  width: 110px;
+}
+
+.field-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--secondary-text-color);
+  margin-bottom: 10px;
+}
+
+.col-gap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fw-bold {
+  font-weight: 600;
+}
+
+.text-muted-truncate {
+  color: var(--secondary-text-color);
+  max-width: 260px;
+}
+
+.text-empty {
+  color: var(--secondary-text-color);
+  font-style: italic;
+}
+
+/* ── Submit row ─────────────────────────────────────────── */
+.submit-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 4px;
+}
+
+.submit-row .hint {
+  font-size: 12px;
+  color: var(--secondary-text-color);
+}
+
+/* ── Manage tab layout ──────────────────────────────────── */
+.manage-layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 20px;
+  align-items: start;
+}
+
+/* Medium screens — collapse form sidebar below table */
+@media (max-width: 860px) {
+  .manage-layout { grid-template-columns: 1fr; }
+  .form-card { position: static; }
+}
+
+/* Small screens — single column everything */
+@media (max-width: 540px) {
+  .page-body { padding: var(--spacing-small) var(--spacing-medium); }
+  .panel { padding: var(--spacing-medium); }
+  .fragrance-grid { grid-template-columns: 1fr; }
+  .field-row { grid-template-columns: 1fr; }
+  .field-row .qty-field { width: 100%; }
+  .submit-row { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .app-header { padding: 10px var(--spacing-medium); }
+  .tab-bar { padding: 0 var(--spacing-medium); }
+}
+
+/* ── Table ──────────────────────────────────────────────── */
+.table-wrap { overflow: auto; }
+
+.fragrance-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.fragrance-table th {
+  text-align: left;
+  padding: var(--spacing-small) 10px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--secondary-text-color);
+  border-bottom: 2px var(--border-style) var(--layout-border-color);
+  white-space: nowrap;
+}
+
+.fragrance-table td {
+  padding: 10px;
+  border-bottom: var(--border-width) var(--border-style) var(--grey-background-color);
+  vertical-align: middle;
+  color: var(--primary-text-color);
+}
+
+.fragrance-table tbody tr:hover td {
+  background: var(--grey-background-color);
+}
+
+.fragrance-table .category-pill {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: var(--primary-selected-color);
+  color: var(--color-dark_blue);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.action-cell {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+/* ── Form sidebar card ──────────────────────────────────── */
+.form-card {
+  background: var(--grey-background-color);
+  border: var(--border-width) var(--border-style) var(--layout-border-color);
+  border-radius: var(--border-radius-medium);
+  padding: var(--spacing-medium);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: sticky;
+  top: var(--spacing-large);
+}
+
+.form-card-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--primary-text-color);
 }

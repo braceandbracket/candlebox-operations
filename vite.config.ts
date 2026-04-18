@@ -16,6 +16,11 @@ export default defineConfig(() => {
     server: {
       port: 8301,
       allowedHosts: [".apps-tunnel.monday.app"],
+      proxy: {
+        "/fragrances": "http://localhost:3001",
+        "/webhooks": "http://localhost:3001",
+        "/health": "http://localhost:3001",
+      },
     },
   };
 });

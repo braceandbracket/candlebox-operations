@@ -1,0 +1,17 @@
+{
+  "name": "candlebox-server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@fastify/cors": "^11.1.0",
+    "@mondaycom/apps-sdk": "^2.1.2",
+    "fastify": "^5.6.1",
+    "jsonwebtoken": "^9.0.2",
+    "zod": "^4.1.12"
+  }
+}

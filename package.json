@@ -3,21 +3,25 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "start": "npm run init && npm run stop && concurrently \"npm run server\" \"npm run expose\"",
-    "deploy:build": "vite build",
-    "deploy:push": "mapps code:push --client-side -d \"build\"",
-    "deploy": "npm run deploy:build && npm run deploy:push",
-    "init": "mapps init -l",
+    "start": "npm run stop && concurrently \"npm run dev:client\" \"npm run expose\" \"npm run dev:server\"",
+    "stop": "kill-port 8301 && kill-port 4049 && kill-port 4040",
+    "dev:client": "vite",
+    "dev:server": "tsx watch --env-file .env.local server/src/index.ts",
     "expose": "mapps tunnel:create -p 8301",
-    "server": "vite",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject",
-    "stop": "kill-port 8301 && kill-port 4049 && kill-port 4040"
+    "build:client": "vite build",
+    "build:server": "tsc -p server/tsconfig.json && cp server/package.json server/dist/package.json",
+    "deploy:client": "npm run build:client && mapps code:push --client-side -d \"build\" -i 14083495",
+    "deploy:server": "npm run build:server && mapps code:push -d \"server/dist\" -i 14083495",
+    "init": "mapps init -l"
   },
   "dependencies": {
-    "@mondaycom/apps-sdk": "^2.1.2",
+    "@fastify/cors": "^11.1.0",
+    "@mondaycom/apps-sdk": "^3.3.2",
     "@vibe/core": "^3.19.0",
-    "monday-sdk-js": "^0.5.5"
+    "fastify": "^5.6.1",
+    "jsonwebtoken": "^9.0.2",
+    "monday-sdk-js": "^0.5.5",
+    "zod": "^4.1.12"
   },
   "eslintConfig": {
     "extends": "react-app"
@@ -36,6 +40,7 @@
   },
   "devDependencies": {
     "@mondaycom/apps-cli": "^4.9.2",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^25.6.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
@@ -46,6 +51,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "sass": "^1.54.8",
+    "tsx": "^4.20.6",
     "typescript": "^6.0.3",
     "vite": "^6.2.2"
   },

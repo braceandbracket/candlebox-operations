@@ -1,5 +1,8 @@
-.env
+.env.local
 .mappsrc
 node_modules
 build
 build.zip
+server/dist
+*.tsbuildinfo
+local-secure-storage.db.json
