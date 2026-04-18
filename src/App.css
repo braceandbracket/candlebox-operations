@@ -54,6 +54,7 @@ body {
 .page-body {
   flex: 1;
   padding: var(--spacing-medium) var(--spacing-large);
+  padding-bottom: 80px; /* clears monday.com Contact Support floating widget */
   display: flex;
   flex-direction: column;
   gap: var(--spacing-medium);
@@ -130,8 +131,49 @@ body {
   align-items: start;
 }
 
-.field-row .qty-field {
-  width: 110px;
+.field-row.field-row-two {
+  grid-template-columns: 1fr 1fr;
+}
+
+.field-row.field-row-two > * {
+  min-width: 0;
+}
+
+.field-row.field-row-addr-qty {
+  grid-template-columns: 3fr 1fr;
+}
+
+.field-row.field-row-addr-qty > * {
+  min-width: 0;
+}
+
+.section-label-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--spacing-medium);
+  margin-bottom: 10px;
+}
+
+.section-label-row-title {
+  margin-bottom: 0;
+}
+
+.section-label-row-meta {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: var(--secondary-text-color);
+  white-space: nowrap;
+}
+
+.field-required-note {
+  margin: 0 0 2px;
+  font-size: 11px;
+  color: var(--secondary-text-color);
+}
+
+.field-required-note .field-required-asterisk {
+  color: var(--negative-color);
 }
 
 .field-label {
@@ -166,13 +208,8 @@ body {
 .submit-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   padding-top: 4px;
-}
-
-.submit-row .hint {
-  font-size: 12px;
-  color: var(--secondary-text-color);
 }
 
 /* ── Manage tab layout ──────────────────────────────────── */
@@ -191,11 +228,20 @@ body {
 
 /* Small screens — single column everything */
 @media (max-width: 540px) {
-  .page-body { padding: var(--spacing-small) var(--spacing-medium); }
+  .page-body {
+    padding: var(--spacing-small) var(--spacing-medium);
+    padding-bottom: 80px;
+  }
   .panel { padding: var(--spacing-medium); }
   .fragrance-grid { grid-template-columns: 1fr; }
   .field-row { grid-template-columns: 1fr; }
-  .field-row .qty-field { width: 100%; }
+  .section-label-row {
+    flex-wrap: wrap;
+    white-space: normal;
+  }
+  .section-label-row-meta {
+    white-space: normal;
+  }
   .submit-row { flex-direction: column; align-items: flex-start; gap: 10px; }
   .app-header { padding: 10px var(--spacing-medium); }
   .tab-bar { padding: 0 var(--spacing-medium); }

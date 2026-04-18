@@ -9,7 +9,7 @@ export const fragranceSeedData: FragranceInput[] = [
   {
     name: "Vanilla Bourbon",
     description: "Warm vanilla bean layered with soft oak bourbon notes.",
-    category: "Gourmand",
+    category: "Fruity",
   },
   {
     name: "Sea Salt Drift",
@@ -34,11 +34,11 @@ export const fragranceSeedData: FragranceInput[] = [
   {
     name: "Amber Night",
     description: "Soft amber resin with saffron and tonka.",
-    category: "Amber",
+    category: "Smokey",
   },
   {
     name: "Forest Fig",
     description: "Sweet fig fruit balanced with pine and moss.",
-    category: "Green",
+    category: "Fresh",
   },
 ];

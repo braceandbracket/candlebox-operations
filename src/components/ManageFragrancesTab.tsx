@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
-import { AttentionBox, Button, TextField } from "@vibe/core";
+import { AttentionBox, Button, Dropdown, TextField } from "@vibe/core";
+import type { DropdownOption } from "@vibe/core";
 import { createFragrance, deleteFragrance, updateFragrance } from "@/api/fragranceApi";
 import type { Fragrance, FragranceInput } from "@/types/fragrance";
 
@@ -11,10 +12,15 @@ const emptyForm: FragranceInput = {
 
 interface ManageFragrancesTabProps {
   fragrances: Fragrance[];
+  scentCategories: string[];
   onChanged: (next: Fragrance[]) => void;
 }
 
-export function ManageFragrancesTab({ fragrances, onChanged }: ManageFragrancesTabProps) {
+export function ManageFragrancesTab({
+  fragrances,
+  scentCategories,
+  onChanged,
+}: ManageFragrancesTabProps) {
   const [query, setQuery] = useState("");
   const [form, setForm] = useState<FragranceInput>(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -30,6 +36,11 @@ export function ManageFragrancesTab({ fragrances, onChanged }: ManageFragrancesT
         item.description.toLowerCase().includes(lower)
     );
   }, [fragrances, query]);
+
+  const categoryOptions = useMemo(
+    () => scentCategories.map((category) => ({ value: category, label: category })),
+    [scentCategories]
+  );
 
   const updateField = (key: keyof FragranceInput, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -84,6 +95,8 @@ export function ManageFragrancesTab({ fragrances, onChanged }: ManageFragrancesT
   };
 
   const formValid = form.name.trim() && form.description.trim() && form.category.trim();
+  const categoryValue: DropdownOption | null =
+    categoryOptions.find((option) => option.value === form.category) ?? null;
 
   return (
     <div className="panel">
@@ -153,12 +166,18 @@ export function ManageFragrancesTab({ fragrances, onChanged }: ManageFragrancesT
             onChange={(value) => updateField("name", value)}
             placeholder="Vanilla Bourbon"
           />
-          <TextField
-            title="Category"
-            value={form.category}
-            onChange={(value) => updateField("category", value)}
-            placeholder="Gourmand"
-          />
+          <div>
+            <div className="field-label">Category</div>
+            <Dropdown
+              options={categoryOptions}
+              value={categoryValue}
+              onChange={(option) => {
+                const value = Array.isArray(option) ? option[0]?.value : option?.value;
+                updateField("category", String(value ?? ""));
+              }}
+              placeholder="Select category…"
+            />
+          </div>
           <TextField
             title="Description"
             value={form.description}

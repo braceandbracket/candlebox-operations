@@ -2,19 +2,28 @@ import React, { useMemo, useState } from "react";
 import { AttentionBox, Button, Dropdown, TextArea, TextField } from "@vibe/core";
 import type { DropdownOption } from "@vibe/core";
 import { createOrderItem } from "@/lib/monday";
+import type { ScentRef } from "@/lib/monday";
+import { formatUsPhoneMask } from "@/lib/usPhone";
 import type { Fragrance } from "@/types/fragrance";
 
 interface NewOrderTabProps {
   boardId?: number;
   fragrances: Fragrance[];
+  scentCategories: string[];
   onSubmitted: () => void;
 }
 
 const qtyPattern = /^\d+$/;
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export function NewOrderTab({ boardId, fragrances, onSubmitted }: NewOrderTabProps) {
+export function NewOrderTab({ boardId, fragrances, scentCategories, onSubmitted }: NewOrderTabProps) {
   const [selected, setSelected] = useState<[string, string, string]>(["", "", ""]);
-  const [customer, setCustomer] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [company, setCompany] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
   const [quantity, setQuantity] = useState("1");
   const [inscription, setInscription] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -25,10 +34,20 @@ export function NewOrderTab({ boardId, fragrances, onSubmitted }: NewOrderTabPro
     () => fragrances.map((item) => ({ value: item.name, label: `${item.name} (${item.category})` })),
     [fragrances]
   );
+  const fragranceByName = useMemo(() => new Map(fragrances.map((item) => [item.name, item])), [fragrances]);
+  const validCategorySet = useMemo(() => new Set(scentCategories), [scentCategories]);
 
   const uniqueCount = new Set(selected.filter(Boolean)).size;
   const validQuantity = qtyPattern.test(quantity) && Number(quantity) >= 1;
-  const canSubmit = uniqueCount === 3 && customer.trim().length > 0 && validQuantity;
+
+  const requiredContactOk =
+    firstName.trim().length > 0 &&
+    lastName.trim().length > 0 &&
+    email.trim().length > 0 &&
+    address.trim().length > 0 &&
+    emailPattern.test(email.trim());
+
+  const canSubmit = uniqueCount === 3 && requiredContactOk && validQuantity;
 
   const setSlot = (index: 0 | 1 | 2, value: string) => {
     const next = [...selected] as [string, string, string];
@@ -44,16 +63,37 @@ export function NewOrderTab({ boardId, fragrances, onSubmitted }: NewOrderTabPro
     setFeedback(null);
     setIsSaving(true);
     try {
+      const scents = selected.map((name) => {
+        const match = fragranceByName.get(name);
+        if (!match) {
+          throw new Error(`Selected fragrance '${name}' was not found.`);
+        }
+        if (scentCategories.length > 0 && !validCategorySet.has(match.category)) {
+          throw new Error(`Category '${match.category}' is not configured on the board.`);
+        }
+        return { name: match.name, category: match.category };
+      }) as [ScentRef, ScentRef, ScentRef];
+
       await createOrderItem({
         boardId,
-        customer: customer.trim(),
-        scents: selected,
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        company: company.trim() || undefined,
+        email: email.trim(),
+        phone: phone.trim() || undefined,
+        address: address.trim(),
+        scents,
         quantity: Number(quantity),
         inscription: inscription.trim(),
       });
       setFeedback("Order submitted to Production Orders board.");
       setSelected(["", "", ""]);
-      setCustomer("");
+      setFirstName("");
+      setLastName("");
+      setCompany("");
+      setEmail("");
+      setPhone("");
+      setAddress("");
       setQuantity("1");
       setInscription("");
       onSubmitted();
@@ -78,7 +118,12 @@ export function NewOrderTab({ boardId, fragrances, onSubmitted }: NewOrderTabPro
       <hr className="section-divider" />
 
       <div>
-        <div className="field-label">Scent profiles</div>
+        <div className="section-label-row">
+          <span className="field-label section-label-row-title">Scent profiles</span>
+          <span className="section-label-row-meta">
+            {uniqueCount === 3 ? `${uniqueCount} fragrances selected ✓` : `${uniqueCount}/3 fragrances selected`}
+          </span>
+        </div>
         <div className="fragrance-grid">
           {([0, 1, 2] as const).map((slot) => (
             <div key={slot}>
@@ -103,16 +148,68 @@ export function NewOrderTab({ boardId, fragrances, onSubmitted }: NewOrderTabPro
 
       <hr className="section-divider" />
 
-      <div className="field-row">
+      <div className="col-gap">
+        <div>
+          <div className="field-label">Customer details</div>
+          <p className="field-required-note">
+            <span className="field-required-asterisk" aria-hidden="true">
+              *
+            </span>{" "}
+            Required field
+          </p>
+        </div>
+        <div className="field-row field-row-two">
+          <TextField
+            title="First name"
+            required
+            requiredErrorText="Required"
+            value={firstName}
+            onChange={(value) => setFirstName(value)}
+            placeholder="Jane"
+          />
+          <TextField
+            title="Last name"
+            required
+            requiredErrorText="Required"
+            value={lastName}
+            onChange={(value) => setLastName(value)}
+            placeholder="Doe"
+          />
+        </div>
         <TextField
-          title="Customer / company name"
-          value={customer}
-          onChange={(value) => setCustomer(value)}
+          title="Company (optional)"
+          value={company}
+          onChange={(value) => setCompany(value)}
           placeholder="ACME Corp"
         />
-        <div className="qty-field">
+        <div className="field-row field-row-two">
           <TextField
-            title="Qty (kits)"
+            title="Email"
+            required
+            requiredErrorText="Required"
+            type="email"
+            value={email}
+            onChange={(value) => setEmail(value)}
+            placeholder="jane@example.com"
+          />
+          <TextField
+            title="Phone (optional)"
+            value={phone}
+            onChange={(value) => setPhone(formatUsPhoneMask(value))}
+            placeholder="555-123-4567"
+          />
+        </div>
+        <div className="field-row field-row-addr-qty">
+          <TextField
+            title="Client shipping address"
+            required
+            requiredErrorText="Required"
+            value={address}
+            onChange={(value) => setAddress(value)}
+            placeholder="Street, city, state, ZIP"
+          />
+          <TextField
+            title="Quantity (kits)"
             type="number"
             value={quantity}
             onChange={(value) => setQuantity(value)}
@@ -121,8 +218,10 @@ export function NewOrderTab({ boardId, fragrances, onSubmitted }: NewOrderTabPro
         </div>
       </div>
 
+      <hr className="section-divider" />
+
       <TextArea
-        title="Personalized inscription (optional)"
+        label="Personalized inscription (optional)"
         value={inscription}
         onChange={(event) => setInscription(event.target.value)}
         placeholder="Happy Anniversary, Team!"
@@ -135,9 +234,6 @@ export function NewOrderTab({ boardId, fragrances, onSubmitted }: NewOrderTabPro
       {feedback && <AttentionBox type="success" text={feedback} />}
 
       <div className="submit-row">
-        <span className="hint">
-          {uniqueCount === 3 ? `${uniqueCount} fragrances selected ✓` : `${uniqueCount}/3 fragrances selected`}
-        </span>
         <Button onClick={handleSubmit} disabled={!canSubmit || isSaving} loading={isSaving}>
           Submit Order
         </Button>

@@ -10,7 +10,7 @@ The app surfaces as a panel inside a monday.com board view and has two tabs:
 
 | Tab | Purpose |
 |---|---|
-| **New Order** | Choose 3 distinct fragrances, enter the customer name, kit quantity, and optional inscription, then submit. Submitting creates a new item on the `Production Orders` monday board via GraphQL. |
+| **New Order** | Choose 3 distinct fragrances, enter customer contact fields (first/last name, optional company, email, optional phone, address), kit quantity, and optional inscription, then submit. Submitting creates a new item on the `Production Orders` monday board via GraphQL and stamps **Order received** with the current date/time. |
 | **Manage Fragrances** | Add, edit, and delete fragrances from the internal library. The library is what populates the dropdowns on the New Order tab. |
 
 After an order item is created, a monday automation fires a webhook at the backend. The backend calculates an SLA due date (`ceil(quantity / 10)` business days from today), stamps the item's `Order Complete Date` column, and sets its status to **In Queue**.
@@ -262,6 +262,12 @@ VITE_SERVER_BASE_URL=https://e807a-service-34720162-cb941312.us.monday.app npm r
 ```
 
 ---
+
+## Future Enhancements
+
+- Lock scent profile editing on orders once they move into an in-progress production status.
+- Add explicit versioning guidance for fragrance names (for example, `Red Rose v2`) when formulas evolve.
+- Add a migration utility to normalize existing fragrance categories in storage against current board labels.
 
 ## Common issues
 

@@ -4,20 +4,37 @@
 
 - Board: `Production Orders`
 - Board ID: `18409136052`
-- Column mapping used by app:
-  - Client first name: `text`
-  - Client last name: `text6`
-  - Scent profiles: `dropdown`
-  - Quantity: `numbers`
-  - Inscription request: `text5`
-  - Status: `status`
+- Column mapping used by app (defaults in `src/config.ts`; override with `VITE_MONDAY_COL_*` in `.env.local`):
+  - Client first name: `text` (`VITE_MONDAY_COL_CLIENT_FIRST_NAME`)
+  - Client last name: `text6` (`VITE_MONDAY_COL_CLIENT_LAST_NAME`)
+  - Company name: `text_mm2h5g3q` (`VITE_MONDAY_COL_COMPANY`)
+  - Client email (Email column): `email` (`VITE_MONDAY_COL_EMAIL`) — app sends `{ email, text }` for `email` / `email_*` column ids.
+  - Client phone (Phone column): `phone` (`VITE_MONDAY_COL_PHONE`) — app sends 10-digit national number + `countryShortName: "US"`; New Order tab formats input as xxx-xxx-xxxx.
+  - Client shipping address (Location column): `location` (`VITE_MONDAY_COL_ADDRESS`) — app sends `{ lat, lng, address }` with **placeholder** `lat`/`lng` of `"0"` when only a street address is entered (no geocoding). Override coords later in monday if needed.
+  - Order received (date/time): `date_1` (`VITE_MONDAY_COL_ORDER_RECEIVED`)
+  - Scent profiles: `dropdown` (`VITE_MONDAY_COL_SCENT_PROFILES`)
+  - Quantity: `numbers` (`VITE_MONDAY_COL_QUANTITY`)
+  - Inscription request: `text5` (`VITE_MONDAY_COL_INSCRIPTION`)
+  - Status: `status` (used by automations / SLA webhook, not set on create from the app)
   - Order complete date (SLA target): `date_13`
 
-If your board differs, update `.env` and `src/config.ts`.
+Confirm column ids in the board column menu; wrong ids will cause `create_item` to fail.
 
-## Automation recipe
+If your board differs, update `.env.local` (preferred) or `src/config.ts`.
+
+## Automation recipes
 
 Configure in monday UI:
+
+### 1. Status on new order
+
+1. Open `Production Orders` board.
+2. Add automation: **When an item is created → set Status to "New Order"** (exact wording depends on monday’s recipe picker).
+3. Save recipe.
+
+Note: The SLA webhook (below) still sets status to **In Queue** after it runs, so the final status for new items remains **In Queue**.
+
+### 2. SLA webhook
 
 1. Open `Production Orders` board.
 2. Add automation: **When an item is created, send a webhook**.
