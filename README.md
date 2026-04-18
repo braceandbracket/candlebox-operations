@@ -64,18 +64,17 @@ npm install
 Copy the example file:
 
 ```bash
-cp .env.example .env
+cp .env.local.example .env.local
 ```
 
-The `.env` file is for **local development only**. The only values you should need to change are:
+The `.env.local` file is for **local development only**. The only values you should need to change are:
 
 | Variable | Description |
 |---|---|
-| `MONDAY_SIGNING_SECRET` | Found in monday Developer Centre → Your App → General → Signing Secret. Used by the local server to verify JWT tokens. In production this is stored as a monday Secret, not here. |
 | `VITE_SERVER_BASE_URL` | The tunnel URL printed when `npm start` runs (e.g. `https://460d9306c754.apps-tunnel.monday.app`). Points the React app at the backend. In production this is passed inline at build time — see [Deploying](#deploying). |
 | `TUNNEL_SUBDOMAIN` | Set this to the subdomain portion of your tunnel URL (e.g. `460d9306c754`) to keep the URL stable across restarts. Leave blank to get a random one each run. |
 
-`SKIP_AUTH=true` and `SERVER_PORT=3001` are pre-set in `.env.example` and should not need changing for local dev.
+`SKIP_AUTH=true` and `SERVER_PORT=3001` are pre-set in `.env.local.example` and should not need changing for local dev.
 
 The board ID and SLA column IDs are hardcoded in source (`src/config.ts` and `server/src/index.ts`). If the board schema changes, update them there.
 
@@ -122,6 +121,7 @@ candlebox-operations/
 ├── src/                        # React frontend
 │   ├── App.tsx                 # Root component, tab router, data loading
 │   ├── config.ts               # Server base URL (from env at build time) and hardcoded board/column IDs
+│   ├── init.ts                 # monday SDK initialisation
 │   ├── api/
 │   │   └── fragranceApi.ts     # HTTP client for /fragrances endpoints
 │   ├── components/
@@ -135,7 +135,7 @@ candlebox-operations/
 ├── server/src/                 # Fastify backend
 │   ├── index.ts                # Route definitions
 │   ├── auth.ts                 # JWT middleware (requireSessionToken)
-│   ├── config.ts               # Port config and signing secret accessor
+│   ├── config.ts               # Port config and client secret accessor
 │   ├── fragrance-store.ts      # SecureStorage read/write helpers
 │   ├── fragrance.ts            # Fragrance TypeScript types
 │   ├── schema.ts               # Zod validation schemas
@@ -144,9 +144,11 @@ candlebox-operations/
 │   └── monday-api.ts           # Server-side monday GraphQL helper
 │
 ├── docs/
-│   └── ops-setup.md            # Board/column IDs, automation recipe, deploy notes
+│   ├── ops-setup.md            # Board/column IDs, automation recipe, deploy notes
+│   └── requirements.md         # Product requirements and feature notes
 │
-├── .env.example                # Template — copy to .env and fill in secrets
+├── .env                        # Committed base config (no secrets); .env.local overrides locally
+├── .env.local.example          # Template — copy to .env.local and fill in secrets
 └── vite.config.ts              # Vite config (path aliases, proxy)
 ```
 
@@ -178,9 +180,9 @@ It reads the `quantity` column of the new item, calculates the due date as `ceil
 
 ## Authentication
 
-The frontend calls `monday.get("sessionToken")` to obtain a short-lived JWT signed by monday, then attaches it as a `Bearer` token to every API request. The server verifies the signature using `MONDAY_SIGNING_SECRET`.
+The frontend calls `monday.get("sessionToken")` to obtain a short-lived JWT signed by monday, then attaches it as a `Bearer` token to every API request. The server verifies the signature using `MONDAY_CLIENT_SECRET`.
 
-**Local development shortcut** — Set `SKIP_AUTH=true` in `.env` to bypass JWT verification entirely. Never use this in production.
+**Local development shortcut** — Set `SKIP_AUTH=true` in `.env.local` to bypass JWT verification entirely. Never use this in production.
 
 ---
 
@@ -205,12 +207,12 @@ Weekends are skipped. The calculation is pure TypeScript with no external depend
 
 The client (static bundle) and server are deployed separately to monday's hosting infrastructure. Order matters — deploy the server first so you have its URL before building the client.
 
-### 1. Set the signing secret in monday *(one time)*
+### 1. Set the client secret in monday *(one time)*
 
-`MONDAY_SIGNING_SECRET` lives in monday's encrypted Secrets store, not in a `.env` file.
+`MONDAY_CLIENT_SECRET` lives in monday's encrypted Secrets store, not in a `.env` file.
 
 ```bash
-npx mapps code:secret -i 11140006 -m set -k MONDAY_SIGNING_SECRET -v <your-signing-secret>
+npx mapps code:secret -i 11140006 -m set -k MONDAY_CLIENT_SECRET -v <your-client-secret>
 ```
 
 ### 2. Deploy the server
@@ -265,7 +267,7 @@ VITE_SERVER_BASE_URL=https://e807a-service-34720162-cb941312.us.monday.app npm r
 
 **"Unable to read monday context"** — The app is running outside a monday board view (e.g., opened directly in a browser tab). The monday SDK can only read context when embedded inside monday.com. Use the board view in your monday account to test.
 
-**"Missing Bearer token" / 401 errors** — Either `SKIP_AUTH` is not `true` and `MONDAY_SIGNING_SECRET` is missing, or the frontend isn't running inside monday so it can't obtain a session token. Set `SKIP_AUTH=true` in `.env` for local testing.
+**"Missing Bearer token" / 401 errors** — Either `SKIP_AUTH` is not `true` and `MONDAY_CLIENT_SECRET` is missing, or the frontend isn't running inside monday so it can't obtain a session token. Set `SKIP_AUTH=true` in `.env.local` for local testing.
 
 **Ports already in use** — `npm start` runs `kill-port` first, but if that fails run `npm run stop` manually before restarting.
 
