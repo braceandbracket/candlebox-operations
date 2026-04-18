@@ -1,3 +1,4 @@
+.env
 .env.local
 .mappsrc
 node_modules
