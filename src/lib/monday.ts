@@ -4,7 +4,7 @@ import { national10Digits } from "@/lib/usPhone";
 import { ORDER_BOARD_COLUMNS, PRODUCTION_BOARD_ID } from "@/config";
 
 const monday = mondaySdk();
-monday.setApiVersion("2023-10");
+monday.setApiVersion("2025-07");
 
 export function getMondayClient() {
   return monday;
@@ -113,7 +113,7 @@ function phoneValueForColumn(
   return national10;
 }
 
-/** monday Location columns expect lat/lng (strings) + address; no geocoding in app — placeholder coords. */
+/** monday Location columns require lat/lng alongside address; no geocoding in this app so coords default to "0". */
 function locationValueForColumn(
   columnId: string,
   address: string
@@ -143,7 +143,7 @@ function buildItemDisplayName(input: OrderInput): string {
   const person = `${input.firstName.trim()} ${input.lastName.trim()}`.trim();
   const who = company && company.length > 0 ? company : person;
   const scentNames = input.scents.map((scent) => scent.name).join(", ");
-  return `${who} — ${scentNames} (${input.quantity} kits)`;
+  return `${who} - ${scentNames} (${input.quantity} kits)`;
 }
 
 export async function createOrderItem(input: OrderInput): Promise<string> {

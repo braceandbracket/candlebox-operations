@@ -1,5 +1,9 @@
-import { MONDAY_API_URL } from "./config";
+import { MONDAY_API_URL, MONDAY_API_VERSION } from "./config";
 
+/**
+ * Server-side monday GraphQL helper with pinned API version and normalized errors.
+ * Use this for all monday API calls in backend routes.
+ */
 export async function mondayGraphql<T>(
   query: string,
   token: string,
@@ -10,7 +14,7 @@ export async function mondayGraphql<T>(
     headers: {
       Authorization: token,
       "Content-Type": "application/json",
-      "API-Version": "2023-10",
+      "API-Version": MONDAY_API_VERSION,
     },
     body: JSON.stringify({ query, variables }),
   });
@@ -24,4 +28,46 @@ export async function mondayGraphql<T>(
     throw new Error("mondayGraphql failed: missing data.");
   }
   return payload.data;
+}
+
+type CreateSubItemMutationResponse = {
+  create_subitem: { id: string };
+};
+
+export async function createSubItem(
+  token: string,
+  parentItemId: number,
+  itemName: string
+): Promise<string> {
+  const mutation = `
+    mutation CreateSubItem($parentItemId: ID!, $itemName: String!) {
+      create_subitem(parent_item_id: $parentItemId, item_name: $itemName) {
+        id
+      }
+    }
+  `;
+  const payload = await mondayGraphql<CreateSubItemMutationResponse>(mutation, token, {
+    parentItemId,
+    itemName,
+  });
+  return payload.create_subitem.id;
+}
+
+type CreateUpdateMutationResponse = {
+  create_update: { id: string };
+};
+
+export async function addItemUpdate(token: string, itemId: number, body: string): Promise<string> {
+  const mutation = `
+    mutation CreateUpdate($itemId: ID!, $body: String!) {
+      create_update(item_id: $itemId, body: $body) {
+        id
+      }
+    }
+  `;
+  const payload = await mondayGraphql<CreateUpdateMutationResponse>(mutation, token, {
+    itemId,
+    body,
+  });
+  return payload.create_update.id;
 }

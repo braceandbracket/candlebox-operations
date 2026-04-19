@@ -13,7 +13,7 @@ The app surfaces as a panel inside a monday.com board view and has two tabs:
 | **New Order** | Choose 3 distinct fragrances, enter customer contact fields (first/last name, optional company, email, optional phone, address), kit quantity, and optional inscription, then submit. Submitting creates a new item on the `Production Orders` monday board via GraphQL and stamps **Order received** with the current date/time. |
 | **Manage Fragrances** | Add, edit, and delete fragrances from the internal library. The library is what populates the dropdowns on the New Order tab. |
 
-After an order item is created, a monday automation fires a webhook at the backend. The backend calculates an SLA due date (`ceil(quantity / 10)` business days from today), stamps the item's `Order Complete Date` column, and sets its status to **In Queue**.
+After an order item is created, a monday automation fires a webhook at the backend. The backend reads the 3 selected scents, creates 3 production sub-items (one per candle), and posts recipe notes from the fragrance library descriptions.
 
 ---
 
@@ -74,9 +74,11 @@ The `.env.local` file is for **local development only**. The only values you sho
 | `VITE_SERVER_BASE_URL` | The tunnel URL printed when `npm start` runs (e.g. `https://460d9306c754.apps-tunnel.monday.app`). Points the React app at the backend. In production this is passed inline at build time — see [Deploying](#deploying). |
 | `TUNNEL_SUBDOMAIN` | Set this to the subdomain portion of your tunnel URL (e.g. `460d9306c754`) to keep the URL stable across restarts. Leave blank to get a random one each run. |
 
-`SKIP_AUTH=true` and `SERVER_PORT=3001` are pre-set in `.env.local.example` and should not need changing for local dev.
+`SERVER_PORT=3001` is pre-set in `.env.local.example` and should not need changing for local dev.
 
-The board ID and SLA column IDs are hardcoded in source (`src/config.ts` and `server/src/index.ts`). If the board schema changes, update them there.
+For auth, keep `SKIP_AUTH=false` for normal tunnel development. Set `SKIP_AUTH=true` only when testing backend endpoints outside the monday iframe. This bypass is disabled in production.
+
+The board ID is configured in `src/config.ts` and can be overridden as needed; webhook scent column can be configured with `MONDAY_COL_SCENT_PROFILES`.
 
 ### 3. Link to the monday app
 
@@ -130,17 +132,19 @@ candlebox-operations/
 │   ├── lib/
 │   │   └── monday.ts           # monday SDK wrapper, GraphQL mutations
 │   └── types/
-│       └── fragrance.ts        # Shared TypeScript types
+│       └── fragrance.ts        # Re-exported shared TypeScript types
 │
 ├── server/src/                 # Fastify backend
 │   ├── index.ts                # Route definitions
 │   ├── auth.ts                 # JWT middleware (requireSessionToken)
 │   ├── config.ts               # Port config and client secret accessor
 │   ├── fragrance-store.ts      # SecureStorage read/write helpers
-│   ├── fragrance.ts            # Fragrance TypeScript types
+│   ├── fragrance.ts            # Re-exported shared TypeScript types
+├── shared/
+│   └── fragrance.ts            # Shared fragrance interfaces used by client + server
+│
 │   ├── schema.ts               # Zod validation schemas
 │   ├── seed.ts                 # Default fragrance library (8 entries)
-│   ├── sla.ts                  # SLA due-date calculation logic
 │   └── monday-api.ts           # Server-side monday GraphQL helper
 │
 ├── docs/
@@ -165,16 +169,18 @@ All `/fragrances` endpoints require a `Authorization: Bearer <monday-session-tok
 | `POST` | `/fragrances` | Create a new fragrance. Body: `{ name, description, category }`. |
 | `PUT` | `/fragrances/:id` | Update an existing fragrance by UUID. Partial body accepted. |
 | `DELETE` | `/fragrances/:id` | Delete a fragrance by UUID. Returns `204 No Content`. |
-| `POST` | `/webhooks/sla` | Called by monday automation on item creation. Calculates and writes the SLA due date. |
+| `POST` | `/webhooks/production-tasks` | Called by monday automation on item creation. Creates 3 sub-items and posts recipe notes. |
 
-### SLA webhook
+### Production tasks webhook
 
-The `/webhooks/sla` endpoint expects:
+The `/webhooks/production-tasks` endpoint expects:
 
-- **Header**: `x-monday-token` — the token monday sends with every webhook call.
-- **Body**: `{ pulseId, boardId, userId?, inputFields? }`
+- **URL setup (challenge):** monday may POST `{ "challenge": "<token>" }` once to verify the URL. Respond with **200** and body `{ "challenge": "<same token>" }`. No auth header on that request.
+- **Real events — Auth**: Requests must include a signed `Authorization` JWT. The server verifies this using `MONDAY_SIGNING_SECRET` (or `MONDAY_CLIENT_SECRET` fallback) before doing any work.
+- **GraphQL token resolution**: Board automations usually send no `x-monday-token`, so the server uses `MONDAY_API_TOKEN` from env for monday GraphQL. If monday sends `x-monday-token` or `Authorization`, that value wins.
+- **Real events — Body**: `{ pulseId, boardId, userId?, inputFields? }` (or wrapped in `{ event: { ... } }` depending on recipe)
 
-It reads the `quantity` column of the new item, calculates the due date as `ceil(quantity / 10)` business days from today, then runs a GraphQL mutation to update `date_13` (due date) and `status` to `"In Queue"`.
+It reads the order's scent dropdown values, maps each scent to a fragrance description in SecureStorage, creates three sub-items (`Candle 1/2/3 - <Scent>`), and posts each scent recipe as an update on the sub-item.
 
 ---
 
@@ -182,24 +188,27 @@ It reads the `quantity` column of the new item, calculates the due date as `ceil
 
 The frontend calls `monday.get("sessionToken")` to obtain a short-lived JWT signed by monday, then attaches it as a `Bearer` token to every API request. The server verifies the signature using `MONDAY_CLIENT_SECRET`.
 
-**Local development shortcut** — Set `SKIP_AUTH=true` in `.env.local` to bypass JWT verification entirely. Never use this in production.
+**Local development shortcut** — `SKIP_AUTH=true` only works when `NODE_ENV !== "production"`. This prevents accidental auth bypass in monday-code production runtimes.
+
+### OAuth scopes required
+
+Manifest scopes are audited for current behavior:
+
+- `boards:read`
+- `boards:write`
+- `webhooks:read`
+- `webhooks:write`
+- `updates:write`
+- `me:read`
 
 ---
 
-## SLA logic
+## SLA tracking (no-code)
 
-Located in `server/src/sla.ts`:
+SLA tracking is configured directly in monday without backend code:
 
-```
-due date = today + ceil(quantity / 10) business days
-```
-
-Examples:
-- 1–10 kits → 1 business day
-- 11–20 kits → 2 business days
-- 50 kits → 5 business days
-
-Weekends are skipped. The calculation is pure TypeScript with no external dependencies and is easy to unit test.
+- Add Formula column `SLA Days` with `ROUNDUP({Quantity}/10, 0)`
+- Use dashboard widgets against `Order Received`, `Order Complete Date`, and status for reporting
 
 ---
 
@@ -214,6 +223,14 @@ The client (static bundle) and server are deployed separately to monday's hostin
 ```bash
 npx mapps code:secret -i 11140006 -m set -k MONDAY_CLIENT_SECRET -v <your-client-secret>
 ```
+
+Also set **`MONDAY_API_TOKEN`** (personal API token with access to `Production Orders`) so board webhook automations can run GraphQL:
+
+```bash
+npx mapps code:secret -i 11140006 -m set -k MONDAY_API_TOKEN -v <your-api-token>
+```
+
+For local dev, put the same value in `.env.local` (see `.env.local.example`).
 
 ### 2. Deploy the server
 
@@ -241,12 +258,12 @@ VITE_SERVER_BASE_URL=https://e807a-service-34720162-cb941312.us.monday.app npm r
 
 In monday Developer Centre → Your App → Features → Board View → Deployment, change from **External hosting** to **Client-side code via CLI (mapps)**. Monday will now serve the app from its CDN instead of your tunnel. Only needs to be done once.
 
-### 5. Update the SLA webhook URL *(one time)*
+### 5. Update the production webhook URL *(one time)*
 
 In the `Production Orders` board automation recipe, update the webhook URL to:
 
 ```
-https://e807a-service-34720162-cb941312.us.monday.app/webhooks/sla
+https://e807a-service-34720162-cb941312.us.monday.app/webhooks/production-tasks
 ```
 
 See `docs/ops-setup.md` for the automation recipe setup.
@@ -268,12 +285,15 @@ VITE_SERVER_BASE_URL=https://e807a-service-34720162-cb941312.us.monday.app npm r
 - Lock scent profile editing on orders once they move into an in-progress production status.
 - Add explicit versioning guidance for fragrance names (for example, `Red Rose v2`) when formulas evolve.
 - Add a migration utility to normalize existing fragrance categories in storage against current board labels.
+- Add a automation to Product Orders borad when all sub items status's = done, then move the entire order to done.
+- Add a new group in Product Orders for order that have shipped.
+- Lock date columns once they change status to "Working on it"
 
 ## Common issues
 
 **"Unable to read monday context"** — The app is running outside a monday board view (e.g., opened directly in a browser tab). The monday SDK can only read context when embedded inside monday.com. Use the board view in your monday account to test.
 
-**"Missing Bearer token" / 401 errors** — Either `SKIP_AUTH` is not `true` and `MONDAY_CLIENT_SECRET` is missing, or the frontend isn't running inside monday so it can't obtain a session token. Set `SKIP_AUTH=true` in `.env.local` for local testing.
+**"Missing Bearer token" / 401 errors** — Either `SKIP_AUTH` is `false` and `MONDAY_CLIENT_SECRET` is missing, or the frontend isn't running inside monday so it can't obtain a session token. Set `SKIP_AUTH=true` only for direct backend testing outside monday iframe.
 
 **Ports already in use** — `npm start` runs `kill-port` first, but if that fails run `npm run stop` manually before restarting.
 

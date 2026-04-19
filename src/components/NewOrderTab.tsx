@@ -227,9 +227,6 @@ export function NewOrderTab({ boardId, fragrances, scentCategories, onSubmitted 
         placeholder="Happy Anniversary, Team!"
       />
 
-      {uniqueCount !== 3 && uniqueCount > 0 && (
-        <AttentionBox type="warning" text="Select 3 distinct fragrances to continue." />
-      )}
       {error && <AttentionBox type="danger" text={error} />}
       {feedback && <AttentionBox type="success" text={feedback} />}
 

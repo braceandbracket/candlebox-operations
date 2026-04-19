@@ -1,5 +1,5 @@
 export const SERVER_BASE_URL =
-  import.meta.env.VITE_SERVER_BASE_URL ?? "http://localhost:3000";
+  import.meta.env.VITE_SERVER_BASE_URL ?? "http://localhost:3001";
 
 export const PRODUCTION_BOARD_ID = 18409136052;
 

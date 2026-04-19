@@ -29,8 +29,14 @@ function readBearerToken(request: FastifyRequest): string | null {
   return token;
 }
 
+/**
+ * Validates monday session token for authenticated API routes.
+ * Local bypass is allowed only when explicitly enabled and NODE_ENV is non-production.
+ */
 export async function requireSessionToken(request: FastifyRequest, reply: FastifyReply): Promise<void> {
-  if (process.env.SKIP_AUTH === "true") {
+  const isDev = process.env.NODE_ENV !== "production";
+  if (isDev && process.env.SKIP_AUTH === "true") {
+    request.log.warn("Auth bypassed via SKIP_AUTH in non-production environment.");
     request.mondaySession = { userId: 0, accountId: 0 };
     return;
   }
