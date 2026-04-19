@@ -221,13 +221,13 @@ The client (static bundle) and server are deployed separately to monday's hostin
 `MONDAY_CLIENT_SECRET` lives in monday's encrypted Secrets store, not in a `.env` file.
 
 ```bash
-npx mapps code:secret -i 11140006 -m set -k MONDAY_CLIENT_SECRET -v <your-client-secret>
+npx mapps code:secret -i  <monday-app-id> -m set -k MONDAY_CLIENT_SECRET -v <your-client-secret>
 ```
 
 Also set **`MONDAY_API_TOKEN`** (personal API token with access to `Production Orders`) so board webhook automations can run GraphQL:
 
 ```bash
-npx mapps code:secret -i 11140006 -m set -k MONDAY_API_TOKEN -v <your-api-token>
+npx mapps code:secret -i  <monday-app-id> -m set -k MONDAY_API_TOKEN -v <your-api-token>
 ```
 
 For local dev, put the same value in `.env.local` (see `.env.local.example`).
@@ -241,17 +241,15 @@ npm run deploy:server
 The production server URL is visible in monday Developer Centre → Host on monday → Server-side code → General, or via:
 
 ```bash
-npx mapps code:status -v 14083495
+npx mapps code:status -v  <app-version-id>
 ```
-
-Current production server URL: `https://e807a-service-34720162-cb941312.us.monday.app`
 
 ### 3. Deploy the client
 
 Pass the production server URL inline so it gets baked into the bundle without changing `.env`:
 
 ```bash
-VITE_SERVER_BASE_URL=https://e807a-service-34720162-cb941312.us.monday.app npm run deploy:client
+VITE_SERVER_BASE_URL=<production-server-url> npm run deploy:client
 ```
 
 ### 4. Switch the board view deployment type *(one time)*
@@ -263,7 +261,7 @@ In monday Developer Centre → Your App → Features → Board View → Deployme
 In the `Production Orders` board automation recipe, update the webhook URL to:
 
 ```
-https://e807a-service-34720162-cb941312.us.monday.app/webhooks/production-tasks
+<production-server-url>/webhooks/production-tasks
 ```
 
 See `docs/ops-setup.md` for the automation recipe setup.
@@ -275,7 +273,7 @@ See `docs/ops-setup.md` for the automation recipe setup.
 npm run deploy:server
 
 # Client changes only
-VITE_SERVER_BASE_URL=https://e807a-service-34720162-cb941312.us.monday.app npm run deploy:client
+VITE_SERVER_BASE_URL=<production-server-url> npm run deploy:client
 ```
 
 ---
