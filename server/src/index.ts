@@ -11,6 +11,7 @@ import {
 import { createFragrance, deleteFragrance, listFragrances, updateFragrance } from "./fragrance-store";
 import { addItemUpdate, createSubItem, mondayGraphql } from "./monday-api";
 import { fragranceInputSchema, fragranceUpdateSchema } from "./schema";
+import { readMondayAuthHeader, readMondayWebhookChallenge, splitScents } from "./webhook-helpers";
 
 // Inject monday code environment variables into process.env at startup
 new EnvironmentVariablesManager({ updateProcessEnv: true });
@@ -31,37 +32,6 @@ const itemCreatedWebhookSchema = z.object({
 const webhookEnvelopeSchema = z.object({
   event: itemCreatedWebhookSchema,
 });
-
-function splitScents(value: string | null | undefined): string[] {
-  if (!value) {
-    return [];
-  }
-  return value
-    .split(",")
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
-
-/** monday.com URL verification: POST body `{ "challenge": "..." }` → echo same JSON (200). */
-function readMondayWebhookChallenge(body: unknown): string | null {
-  if (!body || typeof body !== "object" || Array.isArray(body)) {
-    return null;
-  }
-  const challenge = (body as { challenge?: unknown }).challenge;
-  return typeof challenge === "string" && challenge.length > 0 ? challenge : null;
-}
-
-function readMondayAuthHeader(headers: Record<string, unknown>): string | null {
-  const mondayToken = headers["x-monday-token"];
-  if (typeof mondayToken === "string" && mondayToken.length > 0) {
-    return mondayToken;
-  }
-  const auth = headers.authorization;
-  if (typeof auth !== "string" || auth.length === 0) {
-    return null;
-  }
-  return auth.startsWith("Bearer ") ? auth.slice("Bearer ".length).trim() : auth.trim();
-}
 
 /**
  * Board automation webhooks ("When an item is created, send a webhook") do not include

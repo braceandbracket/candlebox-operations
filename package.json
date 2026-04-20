@@ -9,10 +9,12 @@
     "dev:server": "tsx watch --env-file .env.local server/src/index.ts",
     "expose": "mapps tunnel:create -p 8301",
     "build:client": "vite build",
-    "build:server": "tsc -p server/tsconfig.json && cp server/package.json server/dist/package.json",
+    "build:server": "rm -rf server/dist server/tsconfig.tsbuildinfo && tsc -p server/tsconfig.json && cp server/package.json server/dist/package.json",
     "deploy:client": "npm run build:client && mapps code:push --client-side -d \"build\" -i 14083495",
     "deploy:server": "npm run build:server && mapps code:push -d \"server/dist\" -i 14083495",
-    "init": "mapps init -l"
+    "init": "mapps init -l",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@fastify/cors": "^11.1.0",
@@ -53,7 +55,8 @@
     "sass": "^1.54.8",
     "tsx": "^4.20.6",
     "typescript": "^6.0.3",
-    "vite": "^6.2.2"
+    "vite": "^6.2.2",
+    "vitest": "^3.2.4"
   },
   "type": "module"
 }
