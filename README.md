@@ -106,6 +106,20 @@ This single command does three things in parallel:
 
 > Port cleanup runs first (`kill-port`) so stale processes from a previous run won't block startup.
 
+### Run unit tests
+
+```bash
+npm test
+```
+
+Runs critical-path unit tests with Vitest (`vitest run`) for pure logic only (no Monday/Fastify/SecureStorage/JWT mocks).
+
+Watch mode:
+
+```bash
+npm run test:watch
+```
+
 **How the API routing works locally:** `VITE_SERVER_BASE_URL` is set to the tunnel URL (not `localhost:3001`). When the React app running inside monday makes an API call, the request travels: monday iframe → tunnel → Vite dev server → Vite proxy (`/fragrances`, `/webhooks`, `/health`) → Fastify on port `3001`. This is why `VITE_SERVER_BASE_URL` points at the tunnel rather than directly at the backend.
 
 ### Pointing monday to your local app
@@ -131,6 +145,8 @@ candlebox-operations/
 │   │   └── ManageFragrancesTab.tsx  # Fragrance CRUD table + form
 │   ├── lib/
 │   │   └── monday.ts           # monday SDK wrapper, GraphQL mutations
+│   │   ├── usPhone.ts          # Pure US phone formatting/parsing helpers
+│   │   └── __tests__/usPhone.test.ts
 │   └── types/
 │       └── fragrance.ts        # Re-exported shared TypeScript types
 │
@@ -146,6 +162,10 @@ candlebox-operations/
 │   ├── schema.ts               # Zod validation schemas
 │   ├── seed.ts                 # Default fragrance library (8 entries)
 │   └── monday-api.ts           # Server-side monday GraphQL helper
+│   ├── webhook-helpers.ts      # Pure webhook parsing helpers (extracted from index.ts)
+│   └── __tests__/
+│       ├── schema.test.ts
+│       └── webhook-helpers.test.ts
 │
 ├── docs/
 │   ├── ops-setup.md            # Board/column IDs, automation recipe, deploy notes
@@ -155,6 +175,18 @@ candlebox-operations/
 ├── .env.local.example          # Template — copy to .env.local and fill in secrets
 └── vite.config.ts              # Vite config (path aliases, proxy)
 ```
+
+---
+
+## Testing scope
+
+Current automated tests cover critical pure paths:
+
+- `src/lib/usPhone.ts` (`digitsOnly`, `formatUsPhoneMask`, `national10Digits`)
+- `server/src/schema.ts` (`fragranceInputSchema`, `fragranceUpdateSchema`)
+- `server/src/webhook-helpers.ts` (`splitScents`, `readMondayWebhookChallenge`, `readMondayAuthHeader`)
+
+Out of scope for now: routes/middleware and integrations that require substantial mocks (Fastify runtime, JWT verification, monday SDK/API, SecureStorage, network fetch).
 
 ---
 
